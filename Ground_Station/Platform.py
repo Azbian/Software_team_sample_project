@@ -26,7 +26,14 @@ while True:
     # Get the azimuth and elevation angles and convert them radian to degree
     new_azimuth = 0
     new_elevation = 0
-
-    #Move the position
-    azimuth_stepper(current_azimuth,new_azimuth,'c','full')
-    elevation_stepper(current_elevation,new_elevation,'c','full')
+    #Move the position if the satellite elevation is greater than -2
+    if new_elevation>-2:
+        azimuth_stepper(current_azimuth,new_azimuth,'full')
+        elevation_stepper(current_elevation,new_elevation,'full')
+        current_azimuth=new_azimuth
+        current_elevation=new_elevation
+    else:
+        azimuth_stepper(current_azimuth,0,'full')
+        elevation_stepper(current_elevation,0,'full')
+        current_azimuth=0
+        current_elevation=0
