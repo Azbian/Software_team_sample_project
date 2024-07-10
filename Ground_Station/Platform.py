@@ -2,6 +2,7 @@ import time
 import os
 import stepper
 
+
 azimuth_stepper=stepper(5,6,200,(17,27,22))
 elevation_stepper=stepper(23,24,200,(14,15,18))
 
@@ -28,12 +29,12 @@ while True:
     new_elevation = 0
     #Move the position if the satellite elevation is greater than -2
     if new_elevation>-2:
-        azimuth_stepper(current_azimuth,new_azimuth,'full')
-        elevation_stepper(current_elevation,new_elevation,'full')
+        azimuth_stepper.move(current_azimuth,new_azimuth,'full')
+        elevation_stepper.move(current_elevation,new_elevation,'full')
         current_azimuth=new_azimuth
         current_elevation=new_elevation
     else:
-        azimuth_stepper(current_azimuth,0,'full')
-        elevation_stepper(current_elevation,0,'full')
+        azimuth_stepper.move(current_azimuth,0,'full')
+        elevation_stepper.move(current_elevation,0,'full')
         current_azimuth=0
         current_elevation=0
