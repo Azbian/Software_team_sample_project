@@ -1,64 +1,78 @@
-import ephem
-import urllib.request
-import time
-import serial
-import os
+import requests
+from skyfield.api import Topos, EarthSatellite, load, utc
+from datetime import datetime, timedelta
 
+class SatelliteTracker:
+    def __init__(self, observer_location):
+        self.observer_location = observer_location
+        self.ts = load.timescale()
 
+    def fetch_telemetry_data(self, sat):
+        url = f'https://celestrak.org/NORAD/elements/gp.php?NAME={sat}&FORMAT=tle'
+        response = requests.get(url)
+        tle_lines = response.text.strip().splitlines()
+        if len(tle_lines) < 3:
+            raise ValueError(f"Invalid TLE data for satellite {sat}")
+        name, line1, line2 = tle_lines[0], tle_lines[1], tle_lines[2]
+        return EarthSatellite(line1, line2, name, self.ts)
 
-# Latitude and longitude of he observer (in degrees)
-#BSMRAAU
-observer_lat = '23.7719'   
-observer_lon = '90.3892'
+    def current_time(self):
+        return datetime.utcnow().replace(tzinfo=utc)
 
-#Dhaka
-#observer_lat = '23.7131986'  
-#observer_lon = '90.4016137'
+    def future_pass(self, satellite, duration_days=1):
+        observer = Topos(latitude_degrees=self.observer_location['latitude'],
+                         longitude_degrees=self.observer_location['longitude'])
+        t0 = self.ts.utc(self.current_time())
+        t1 = self.ts.utc(self.current_time() + timedelta(days=duration_days))
+        times, events = satellite.find_events(observer, t0, t1)
+        pass_times = {
+            'rise': times[0].utc_datetime(),
+            'culminate': times[1].utc_datetime(),
+            'set': times[2].utc_datetime()
+        }
+        return pass_times
 
-#False location
-#observer_lat = '347.143'  
-#observer_lon = '266.63'
+    def sat_angle(self, satellite, time_offset_hours=0):
+        observer = Topos(latitude_degrees=self.observer_location['latitude'],
+                         longitude_degrees=self.observer_location['longitude'])
+        time = self.ts.utc(self.current_time() + timedelta(hours=time_offset_hours))
+        difference = satellite - observer
+        topocentric = difference.at(time)
+        alt, az, distance = topocentric.altaz()
 
-# User input and change that name according to URL
-sat_name= input("Enter the name of the CUBESAT (e.g. CUTE-1 (CO-55)): ")
-sat=sat_name
-i=sat.find(' ')
-if i>0:
-    sat=sat[:i]+"%20"+sat[i+1:]
-# URL for the TLE data
-url = f'https://celestrak.org/NORAD/elements/gp.php?NAME={sat}&FORMAT=tle'
+        return az.degrees, alt.degrees
 
-# Create an ephem observer object for the observer's location
-observer = ephem.Observer()
-observer.lat = ephem.degrees(observer_lat)
-observer.lon = ephem.degrees(observer_lon)
+    def get_local_time(self):
+        return self.current_time()
 
-# Fetch TLE data
-req = urllib.request.urlopen(url)
-TLEdata = req.read().decode("utf-8")
-lines = TLEdata.strip().split('\n')
+    def get_passing_time(self, satellite):
+        return self.future_pass(satellite)
 
+    def get_azimuth_elevation(self, satellite):
+        return self.sat_angle(satellite)
 
+# Define observer location (latitude and longitude in degrees)
+observer_location = {
+    'latitude': 37.7749,
+    'longitude': -122.4194
+}
 
-while True:
-    # Create an ephem sat object
-    sat = ephem.readtle(lines[0], lines[1], lines[2])
+# Create SatelliteTracker object
+tracker = SatelliteTracker(observer_location)
 
-    # Set the observer's date and time to the current time
-    observer.date = ephem.now()
+# Fetch telemetry data for a satellite
+satellite_name = 'ISS (ZARYA)'
+satellite = tracker.fetch_telemetry_data(satellite_name)
 
-    # Compute the sat's position
-    sat.compute(observer)
+# Get current local time
+local_time = tracker.get_local_time()
+print("Local Time:", local_time)
 
-    # Get the azimuth and elevation angles and convert them radian to degree
-    azimuth = sat.az * 180 / ephem.pi
-    elevation = sat.alt * 180 / ephem.pi
+# Get future passing time
+passing_time = tracker.get_passing_time(satellite)
+print("Future Pass Times:", passing_time)
 
-    # Print the angles
-    os.system('cls')
-    print("Real time : "+str(ephem.localtime(ephem.now())))
-    print("Estimated time : "+str(ephem.localtime(observer.next_pass(sat)[0])-ephem.localtime(ephem.now())))
-    print(f"Azimuth: {azimuth:.2f}°, Elevation: {elevation:.2f}°")
-    data = f'{azimuth:.4f},{elevation:.4f}'
-    # Send angles through 'COM' port 
-    time.sleep(0.5)
+# Get azimuth and elevation
+azimuth, elevation = tracker.get_azimuth_elevation(satellite)
+print("Azimuth:", azimuth)
+print("Elevation:", elevation)
