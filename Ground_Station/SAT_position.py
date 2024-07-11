@@ -1,64 +1,53 @@
 import ephem
 import urllib.request
 import time
-import serial
 import os
 
+class SatelliteTracker:
+    def __init__(self, observer_latitude, observer_longitude, satellite_name):
+        self.observer = ephem.Observer()
+        self.observer.lat = ephem.degrees(observer_latitude)
+        self.observer.lon = ephem.degrees(observer_longitude)
+        self.sat_name = satellite_name
+        self.tle_url = self._create_tle_url(satellite_name)
+        self.tle_data = self._fetch_tle_data()
+        self.sat = self._create_satellite(self.tle_data)
 
+    def _create_tle_url(self, satellite_name):
+        sat = satellite_name.replace(' ', '%20')
+        return f'https://celestrak.org/NORAD/elements/gp.php?NAME={sat}&FORMAT=tle'
 
-# Latitude and longitude of he observer (in degrees)
-#BSMRAAU
-observer_lat = '23.7719'   
-observer_lon = '90.3892'
+    def _fetch_tle_data(self):
+        req = urllib.request.urlopen(self.tle_url)
+        tle_data = req.read().decode("utf-8").strip().split('\n')
+        return tle_data
 
-#Dhaka
-#observer_lat = '23.7131986'  
-#observer_lon = '90.4016137'
+    def _create_satellite(self, tle_data):
+        return ephem.readtle(tle_data[0], tle_data[1], tle_data[2])
 
-#False location
-#observer_lat = '347.143'  
-#observer_lon = '266.63'
+    def track(self):
+        while True:
+            self.observer.date = ephem.now()
+            self.sat.compute(self.observer)
 
-# User input and change that name according to URL
-sat_name= input("Enter the name of the CUBESAT (e.g. CUTE-1 (CO-55)): ")
-sat=sat_name
-i=sat.find(' ')
-if i>0:
-    sat=sat[:i]+"%20"+sat[i+1:]
-# URL for the TLE data
-url = f'https://celestrak.org/NORAD/elements/gp.php?NAME={sat}&FORMAT=tle'
+            azimuth = self.sat.az * 180 / ephem.pi
+            elevation = self.sat.alt * 180 / ephem.pi
 
-# Create an ephem observer object for the observer's location
-observer = ephem.Observer()
-observer.lat = ephem.degrees(observer_lat)
-observer.lon = ephem.degrees(observer_lon)
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print(f"Real time: {ephem.localtime(ephem.now())}")
+            print(f"Estimated time to next pass: {ephem.localtime(self.observer.next_pass(self.sat)[0]) - ephem.localtime(ephem.now())}")
+            print(f"Azimuth: {azimuth:.2f}°, Elevation: {elevation:.2f}°")
 
-# Fetch TLE data
-req = urllib.request.urlopen(url)
-TLEdata = req.read().decode("utf-8")
-lines = TLEdata.strip().split('\n')
+            # Display TLE information
+            print("\nTLE Information:")
+            print(f"Name: {self.tle_data[0]}")
+            print(f"TLE Line 1: {self.tle_data[1]}")
+            print(f"TLE Line 2: {self.tle_data[2]}")
+            time.sleep(1.0)
 
+observer_latitude = '23.7719'
+observer_longitude = '90.3892'
+satellite_name = input("Enter Name: ")
 
-
-while True:
-    # Create an ephem sat object
-    sat = ephem.readtle(lines[0], lines[1], lines[2])
-
-    # Set the observer's date and time to the current time
-    observer.date = ephem.now()
-
-    # Compute the sat's position
-    sat.compute(observer)
-
-    # Get the azimuth and elevation angles and convert them radian to degree
-    azimuth = sat.az * 180 / ephem.pi
-    elevation = sat.alt * 180 / ephem.pi
-
-    # Print the angles
-    os.system('cls')
-    print("Real time : "+str(ephem.localtime(ephem.now())))
-    print("Estimated time : "+str(ephem.localtime(observer.next_pass(sat)[0])-ephem.localtime(ephem.now())))
-    print(f"Azimuth: {azimuth:.2f}°, Elevation: {elevation:.2f}°")
-    data = f'{azimuth:.4f},{elevation:.4f}'
-    # Send angles through 'COM' port 
-    time.sleep(0.5)
+tracker = SatelliteTracker(observer_latitude, observer_longitude, satellite_name)
+tracker.track()
