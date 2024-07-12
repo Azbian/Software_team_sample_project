@@ -9,8 +9,8 @@ class fetchTLE:
             
       def fetchData(self):
           response = requests.get(self.url);
-          data = response.text.strip();
-          return data
+          data = response.text.strip().splitlines();
+          return data[1] + "\n" + data[2]
         
 
 satelliteName = "AISSAT 1";
