@@ -8,10 +8,12 @@ class CurrentTime:
         return datetime.utcnow().replace(tzinfo=utc)
 
     def pretty_print_passing_time(self,passing_time):
-            print("Future Pass Times: \n")
+            formatted_output = "Future Pass Times:\n"
             for event, time in passing_time.items():
-                print(f"{event}: {time.strftime('%Y-%m-%d %H:%M:%S UTC')} \n")
-
+                # print(f"{event}: {time.strftime('%Y-%m-%d %H:%M:%S UTC')} \n")
+                formatted_output  += f"{event}: {time.strftime('%Y-%m-%d %H:%M:%S UTC')} \n"
+            return formatted_output
+        
 class FetchTelemetryData:
     def __init__(self, timescale):
         self.ts = timescale
@@ -144,7 +146,8 @@ print(f"\nLocal Time:  {local_time}\n")
 
 # Get future passing time
 passing_time = tracker.get_passing_time(satellite)
-current_time.pretty_print_passing_time(passing_time)
+formatted_passing_time = current_time.pretty_print_passing_time(passing_time)
+print(formatted_passing_time)
 
 # Get satellite position
 latitude, longitude = tracker.get_satellite_position(satellite)
