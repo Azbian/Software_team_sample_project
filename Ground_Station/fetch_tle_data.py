@@ -13,7 +13,5 @@ class fetchTLE:
           return data[1] + "\n" + data[2]
         
 
-satelliteName = "AISSAT 1";
-object = fetchTLE();
-print(object.fetchData());
+
           
