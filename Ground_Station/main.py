@@ -17,11 +17,11 @@ class CurrentTime:
         return utc_time.astimezone(self.dhaka_time_zone)
     
     def pretty_print_passing_time(self,passing_time):
-            formatted_output = "Future Pass Times:\n"
+            formatted_output = "Future Pass Times of Satellite Relative to Observer (Ground Station):\n"
             for event, time in passing_time.items():
                 # print(f"{event}: {time.strftime('%Y-%m-%d %H:%M:%S UTC')} \n")
                 dhaka_time = time.astimezone(self.dhaka_time_zone)
-                formatted_output  += f"{event}: {dhaka_time.strftime('%d %b %Y %I:%M:%S %p UTC')} \n"
+                formatted_output  += f"\n\t{event}: {dhaka_time.strftime('%d %b %Y %I:%M:%S %p UTC')} \n"
             return formatted_output
         
 class FetchTelemetryData:
@@ -139,8 +139,8 @@ class SatelliteTracker:
 
 # Define observer location (latitude and longitude in degrees)
 observer_location = {
-    'latitude': 37.7749,
-    'longitude': -122.4194
+    'latitude': 24.293482,
+    'longitude': 89.081394
 }
 
 # Create SatelliteTracker object
@@ -150,13 +150,16 @@ tracker = SatelliteTracker(observer_location)
 current_time = CurrentTime()
 
 # Fetch telemetry data for a satellite
-satelliteName = input("Enter the name of the CUBESAT (e.g. CUTE-1 (CO-55)): ")
+satelliteName = input("\nEnter the name of the CUBESAT (e.g. CUTE-1 (CO-55)): ")
 satellite = tracker.fetch_telemetry_data(satelliteName)
 
 # Get current local time
 local_time = tracker.get_local_time().strftime('%d %b %Y %I:%M:%S %p UTC')
-print(f"\nLocal Time:  {local_time}\n")
+print(f"\nLocal Time:  \n\n \t{local_time}\n")
 
+print(f"Observer position: \n")
+print(f"\t Latitude: {observer_location['latitude']}\n")
+print(f"\t Longitude: {observer_location['longitude']}\n")
 # Get future passing time
 passing_time = tracker.get_passing_time(satellite)
 formatted_passing_time = current_time.pretty_print_passing_time(passing_time)
@@ -164,7 +167,7 @@ print(formatted_passing_time)
 
 # Get satellite position
 latitude, longitude = tracker.get_satellite_position(satellite)
-print(f"Satellite Position :\nLatitude: {latitude:.2f}, \nLongitude: {longitude:.2f} \n")
+print(f"Satellite Position :\n\n\tLatitude: {latitude:.2f} \n\n\tLongitude: {longitude:.2f} \n")
 
 # Calculate elevation and azimuth
 elevation, azimuth = tracker.get_elevation_azimuth(satellite)
