@@ -32,6 +32,7 @@ current_elevation=0
 
 while True:
     os.system('clear')
+    current_time=tracker.CurrentTime()
     local_time = sat_tracker.get_local_time()
     passing_time = sat_tracker.get_passing_time(satellite)
     latitude, longitude = sat_tracker.get_satellite_position(satellite)
@@ -39,8 +40,10 @@ while True:
     # Get the azimuth and elevation angles
     new_elevation, new_azimuth= sat_tracker.get_elevation_azimuth(satellite)
 
-    print(f"Local time: {local_time}\nPassing time: {passing_time}\nSatellite current position:\nAzimuth: {new_azimuth}    Elevation: {new_elevation}")
-
+    print(f"Local time: {local_time}")
+    current_time.pretty_print_passing_time(passing_time)
+    print(f"Satellite current position:\nAzimuth: {new_azimuth:.3f}    Elevation: {new_elevation:.3f}")
+    time.sleep(2)
     #Move the position if the satellite elevation is greater than -2
     if new_elevation>-2:
         azimuth_stepper.move(current_azimuth,new_azimuth,'full')

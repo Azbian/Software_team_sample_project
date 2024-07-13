@@ -122,35 +122,5 @@ class SatelliteTracker:
         angle_calculator = Angle(longitude, self.observer_location['longitude'], self.observer_location['latitude'])
         return angle_calculator.calculate_elevation_azimuth()
 
-# Define observer location (latitude and longitude in degrees)
-observer_location = {
-    'latitude': 37.7749,
-    'longitude': -122.4194
-}
 
-# Create SatelliteTracker object
-tracker = SatelliteTracker(observer_location)
 
-# Create currentTime Object
-current_time = CurrentTime()
-
-# Fetch telemetry data for a satellite
-satelliteName = 'ISS (ZARYA)'
-satellite = tracker.fetch_telemetry_data(satelliteName)
-
-# Get current local time
-local_time = tracker.get_local_time()
-print(f"\nLocal Time:  {local_time}\n")
-
-# Get future passing time
-passing_time = tracker.get_passing_time(satellite)
-current_time.pretty_print_passing_time(passing_time)
-
-# Get satellite position
-latitude, longitude = tracker.get_satellite_position(satellite)
-print(f"Satellite Position :\nLatitude: {latitude:.2f}, \nLongitude: {longitude:.2f} \n")
-
-# Calculate elevation and azimuth
-elevation, azimuth = tracker.get_elevation_azimuth(satellite)
-print(f"Elevation angle: {elevation:.2f} degrees \n")
-print(f"Azimuth angle: {azimuth:.2f} degrees \n")
