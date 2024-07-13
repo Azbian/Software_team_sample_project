@@ -6,24 +6,24 @@ from tqdm import tqdm
 import time
 import pytz
 
-
 class CurrentTime:
     def __init__(self):
         self.dhaka_time_zone = pytz.timezone('Asia/Dhaka')
+
     def get_utc(self):
         return datetime.utcnow().replace(tzinfo=utc)
+
     def get_dhaka_time(self):
         utc_time = self.get_utc()
         return utc_time.astimezone(self.dhaka_time_zone)
-    
-    def pretty_print_passing_time(self,passing_time):
-            formatted_output = "Future Pass Times:\n"
-            for event, time in passing_time.items():
-                # print(f"{event}: {time.strftime('%Y-%m-%d %H:%M:%S UTC')} \n")
-                dhaka_time = time.astimezone(self.dhaka_time_zone)
-                formatted_output  += f"{event}: {dhaka_time.strftime('%d %b %Y %I:%M:%S %p UTC')} \n"
-            return formatted_output
-        
+
+    def pretty_print_passing_time(self, passing_time):
+        formatted_output = "Future Pass Times:\n"
+        for event, time in passing_time.items():
+            dhaka_time = time.astimezone(self.dhaka_time_zone)
+            formatted_output += f"{event}: {dhaka_time.strftime('%d %b %Y %I:%M:%S %p %Z')} \n"
+        return formatted_output
+
 class FetchTelemetryData:
     def __init__(self, timescale):
         self.ts = timescale
@@ -118,12 +118,13 @@ class SatelliteTracker:
         self.ts = load.timescale()
         self.telemetry_data_fetcher = FetchTelemetryData(self.ts)
         self.future_pass_calculator = FuturePass(self.ts, self.observer_location)
-        self.currentTime = CurrentTime()
+        self.current_time = CurrentTime()  # Instantiate CurrentTime class
+
     def fetch_telemetry_data(self, sat):
         return self.telemetry_data_fetcher.fetch(sat)
 
     def get_local_time(self):
-        return self.currentTime.get_dhaka_time()
+        return self.current_time.get_dhaka_time()  # Use instance method properly
 
     def get_passing_time(self, satellite):
         return self.future_pass_calculator.calculate(satellite)
@@ -146,20 +147,17 @@ observer_location = {
 # Create SatelliteTracker object
 tracker = SatelliteTracker(observer_location)
 
-# Create currentTime Object
-current_time = CurrentTime()
-
 # Fetch telemetry data for a satellite
-satelliteName = input("Enter the name of the CUBESAT (e.g. CUTE-1 (CO-55)): ")
+satelliteName = 'ISS (ZARYA)'
 satellite = tracker.fetch_telemetry_data(satelliteName)
 
-# Get current local time
-local_time = tracker.get_local_time().strftime('%d %b %Y %I:%M:%S %p UTC')
-print(f"\nLocal Time:  {local_time}\n")
+# Get current local time in Dhaka timezone
+local_time = tracker.get_local_time().strftime('%d %b %Y %I:%M:%S %p %Z')
+print(f"\nLocal Time in Dhaka: {local_time}\n")
 
 # Get future passing time
 passing_time = tracker.get_passing_time(satellite)
-formatted_passing_time = current_time.pretty_print_passing_time(passing_time)
+formatted_passing_time = tracker.current_time.pretty_print_passing_time(passing_time)
 print(formatted_passing_time)
 
 # Get satellite position
